@@ -66,13 +66,8 @@ The system includes the following components:
                                |             |
                             [Buttons]   [Joystick]
 ```
-(Add an image showing the connections between all components for better clarity.)
+[car_photo](./photos/arduino_car.jpg)
 
----
-
-## **Electrical Schematic**
-
-(Attach or link to the full schematic diagram illustrating wiring for Arduino, L293D modules, motors, LCD, buttons, joystick, and LEDs.)
 
 ---
 
