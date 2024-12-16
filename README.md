@@ -77,17 +77,17 @@ The system includes the following components:
 
 | **Component**         | **Quantity** | **Description**                     | **Source/Link**                                                                                 | **Datasheet**                                                                 |
 |------------------------|--------------|-------------------------------------|------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| Arduino Uno            | 1            | Microcontroller for control         | [University Of Bucharest]                              | [Datasheet](https://store.arduino.cc/uno-rev3)                               |
-| L293D Motor Driver     | 2            | Controls the DC motors              | [University Of Bucharest]                      | [L293D Datasheet](https://www.ti.com/lit/ds/symlink/l293d.pdf)               |
-| DC Motors              | 4            | Provides car movement               | [University Of Bucharest]                                   | [DC Motor Datasheet](https://components101.com/motors/dc-motor)             |
-| HC-05 Bluetooth Module | 1            | Enables Bluetooth communication     | [HC-05 Module]([https://www.sparkfun.com/products/12576](https://www.optimusdigital.ro/en/wireless-bluetooth/153-hc-05-master-slave-bluetooth-module-with-adapter-33v-and-5v-compatible.html))                                       | [HC-05 Datasheet](https://components101.com/wireless/hc-05-bluetooth-module)|
-| 16x2 LCD Display       | 1            | Displays speed and status           | [University Of Bucharest]                                              | [LCD Datasheet](https://components101.com/displays/16x2-lcd-display-module) |
-| Potentiometer          | 1            | Adjusts LCD contrast                | [University Of Bucharest]                                | N/A                                                                           |
-| LEDs                   | 2            | Represents taillights               | [University Of Bucharest]                                          | [LED Datasheet](https://components101.com/leds/5mm-led-datasheet)           |
-| Joystick Module        | 1            | Acts as a gear shifter              | [University Of Bucharest]                                        | [Joystick Datasheet](https://components101.com/switches/joystick-module)    |
-| Buttons                | 4            | For acceleration, braking, clutch   | [University Of Bucharest]                                      | N/A                                                                           |
-| Breadboard             | 1            | Simplifies connections              | [University Of Bucharest]                                            | N/A                                                                           |
-| Resistors (220Ω)       | 2            | For LED protection                  | [University Of Bucharest]                                    | N/A                                                                           |
+| Arduino Uno            | 1            | Microcontroller for control         | University Of Bucharest                              | [Datasheet](https://store.arduino.cc/uno-rev3)                               |
+| L293D Motor Driver     | 2            | Controls the DC motors              | University Of Bucharest                      | [L293D Datasheet](https://www.ti.com/lit/ds/symlink/l293d.pdf)               |
+| DC Motors              | 4            | Provides car movement               | University Of Bucharest                                  | [DC Motor Datasheet](https://components101.com/motors/dc-motor)             |
+| HC-05 Bluetooth Module | 1            | Enables Bluetooth communication     | [HC-05 Module](https://www.optimusdigital.ro/en/wireless-bluetooth/153-hc-05-master-slave-bluetooth-module-with-adapter-33v-and-5v-compatible.html)                                       | [HC-05 Datasheet](https://components101.com/wireless/hc-05-bluetooth-module)|
+| 16x2 LCD Display       | 1            | Displays speed and status           | University Of Bucharest                                              | [LCD Datasheet](https://components101.com/displays/16x2-lcd-display-module) |
+| Potentiometer          | 1            | Adjusts LCD contrast                | University Of Bucharest                                | N/A                                                                           |
+| LEDs                   | 2            | Represents taillights               | University Of Bucharest                                       | [LED Datasheet](https://components101.com/leds/5mm-led-datasheet)           |
+| Joystick Module        | 1            | Acts as a gear shifter              | University Of Bucharest                                       | [Joystick Datasheet](https://components101.com/switches/joystick-module)    |
+| Buttons                | 4            | For acceleration, braking, clutch   | University Of Bucharest                                     | N/A                                                                           |
+| Breadboard             | 1            | Simplifies connections              | University Of Bucharest                                           | N/A                                                                           |
+| Resistors (220Ω)       | 2            | For LED protection                  | University Of Bucharest                                  | N/A                                                                           |
 
 ---
 
