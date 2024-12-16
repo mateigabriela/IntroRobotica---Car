@@ -66,7 +66,9 @@ The system includes the following components:
                                |             |
                             [Buttons]   [Joystick]
 ```
+
 [Photo](./photos/arduino_car.jpg)
+
 
 
 ---
