@@ -86,6 +86,7 @@ The project consists of a car and a Bluetooth-connected remote control.
 
   ![Controler Image](photos/controler_arduino_tinkercad.PNG)
   ![Car Image](photos/car_arduino_tinkercad.PNG)
+  ![Car Image](photos/diagrama_bloc.PNG)
 
 ---
 
