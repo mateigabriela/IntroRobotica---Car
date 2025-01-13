@@ -205,5 +205,8 @@ The project consists of a car and a Bluetooth-connected remote control.
 
 - **LCD Display**:
   - The **LCD** shows the current speed, gear, and car status (direction, brake, taillights, etc.).
+ 
+  ![Car Image](photos/masina1.jpg)
+
 
 ---
