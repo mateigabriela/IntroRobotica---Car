@@ -84,6 +84,9 @@ The project consists of a car and a Bluetooth-connected remote control.
 - Buzzer
 - Potentiometer (for LCD contrast)
 
+  ![Controler Image](photos/controler_arduino_tinkercad.jpg)
+  ![Car Image](photos/car_arduino_tinkercad.jpg)
+
 ---
 
 ### **How It Works**
@@ -207,6 +210,11 @@ The project consists of a car and a Bluetooth-connected remote control.
   - The **LCD** shows the current speed, gear, and car status (direction, brake, taillights, etc.).
  
   ![Car Image](photos/masina1.jpg)
+  ![Car Image](photos/masina2.jpg)
+  ![Car Image](photos/masina3.jpg)
+  ![Controler Image](photos/telecomanda1.jpg)
+  ![Controler Image](photos/telecomanda2.jpg)
+  ![Controler Image](photos/telecomanda3.jpg)
 
 
 ---
