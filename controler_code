@@ -1,0 +1,171 @@
+#include <Arduino.h>
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
+const int lcdOne = 16;
+const int lcdTwo = 32;
+const int JOYSTICK_X = A0;
+const int JOYSTICK_Y = A1;
+const int JOYSTICK_SW = 5;
+const int BUTTON_STOP = 2;
+const int BUTTON_CLUTCH = 3;
+const int BUTTON_GEAR_1 = 4;
+const int BUTTON_GEAR_2 = 6;
+const int BUTTON_GEAR_3 = 7;
+const int INDEX_BUTTON_STOP = 0;
+const int INDEX_BUTTON_CLUTCH = 1;
+const int INDEX_BUTTON_GEAR_1 = 2;
+const int INDEX_BUTTON_GEAR_2 = 3;
+const int INDEX_BUTTON_GEAR_3 = 4;
+const int INDEX_JOYSTICK_SW = 5;
+const int GEAR_NEUTRAL = 0;
+const int GEAR_FIRST = 1;
+const int GEAR_SECOND = 2;
+const int GEAR_THIRD = 3;
+const int JOYSTICK_DEADZONE_MIN = 400;
+const int JOYSTICK_DEADZONE_MAX = 600;
+const int JOYSTICK_THRESHOLD = 30;
+const unsigned long DEBOUNCE_DELAY = 200;
+int currentGear = GEAR_NEUTRAL;
+bool clutchPressed = false;
+unsigned long lastButtonPressTime[6] = {0, 0, 0, 0, 0, 0};
+unsigned long previousMillis = 0;
+const long JOYSTICK_INTERVAL = 100;
+int lastXValue = 0;
+int lastYValue = 0;
+bool stopMode = false;
+
+void setup() {
+  Serial.begin(9600);
+  lcd.begin(16, 2);
+  lcd.clear();
+
+  pinMode(BUTTON_STOP, INPUT_PULLUP);
+  pinMode(BUTTON_CLUTCH, INPUT_PULLUP);
+  pinMode(BUTTON_GEAR_1, INPUT_PULLUP);
+  pinMode(BUTTON_GEAR_2, INPUT_PULLUP);
+  pinMode(BUTTON_GEAR_3, INPUT_PULLUP);
+  pinMode(JOYSTICK_SW, INPUT_PULLUP);
+}
+
+bool debounceButton(int buttonPin, int index) {
+  unsigned long currentMillis = millis();
+  if (digitalRead(buttonPin) == LOW) {
+    if (currentMillis - lastButtonPressTime[index] >= DEBOUNCE_DELAY) {
+      lastButtonPressTime[index] = currentMillis;
+      return true;
+    }
+  }
+  return false;
+}
+
+void displayMessageOnLCD(const String &message) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(message.substring(0, lcdOne));  
+  if (message.length() > lcdOne) {
+    lcd.setCursor(0, 1);
+    lcd.print(message.substring(lcdOne, lcdTwo));  
+  }
+}
+bool debounceButtonState(int buttonPin, int index, bool &lastButtonState) {
+  unsigned long currentMillis = millis();
+  bool currentState = digitalRead(buttonPin) == LOW;
+  
+  if (currentState != lastButtonState) {
+    if (currentMillis - lastButtonPressTime[index] >= DEBOUNCE_DELAY) {
+      lastButtonPressTime[index] = currentMillis;
+      lastButtonState = currentState;
+      return currentState; 
+    }
+  }
+  return false;
+}
+
+void loop() {
+  while (Serial.available() > 0) {
+    String message = Serial.readStringUntil('\n');
+    displayMessageOnLCD(message);
+  }
+
+  if (debounceButton(BUTTON_STOP, INDEX_BUTTON_STOP)) {
+    stopMode = true;
+    Serial.println("X");
+  }
+
+  if (stopMode) {
+    if (digitalRead(BUTTON_STOP) == HIGH) {
+      stopMode = false;
+    }
+    return;
+  }
+
+  static bool lastClutchState = false;
+  static bool lastGear1State = false;
+  static bool lastGear2State = false;
+  static bool lastGear3State = false;
+
+  if (debounceButtonState(BUTTON_CLUTCH, INDEX_BUTTON_CLUTCH, lastClutchState)) {
+    clutchPressed = true;
+  } else if (!lastClutchState) {
+    clutchPressed = false;
+  }
+
+  if (clutchPressed) {
+    if (debounceButtonState(BUTTON_GEAR_1, INDEX_BUTTON_GEAR_1, lastGear1State)) {
+      currentGear = GEAR_FIRST;
+      Serial.println("G1");
+    } else if (debounceButtonState(BUTTON_GEAR_2, INDEX_BUTTON_GEAR_2, lastGear2State)) {
+      currentGear = GEAR_SECOND;
+      Serial.println("G2");
+    } else if (debounceButtonState(BUTTON_GEAR_3, INDEX_BUTTON_GEAR_3, lastGear3State)) {
+      currentGear = GEAR_THIRD;
+      Serial.println("G3");
+    }
+  }
+
+  if (debounceButton(JOYSTICK_SW, INDEX_JOYSTICK_SW)) {
+    Serial.println("H");
+  }
+
+
+  if (currentGear > GEAR_NEUTRAL) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= JOYSTICK_INTERVAL) {
+      previousMillis = currentMillis;
+
+      int xValue = analogRead(JOYSTICK_X);
+      int yValue = analogRead(JOYSTICK_Y);
+
+      if (abs(xValue - lastXValue) > JOYSTICK_THRESHOLD) {
+        lastXValue = xValue;
+      } else {
+        xValue = lastXValue;
+      }
+
+      if (abs(yValue - lastYValue) > JOYSTICK_THRESHOLD) {
+        lastYValue = yValue;
+      } else {
+        yValue = lastYValue;
+      }
+
+      bool joystickInNeutral = 
+        (xValue > JOYSTICK_DEADZONE_MIN && xValue < JOYSTICK_DEADZONE_MAX) &&
+        (yValue > JOYSTICK_DEADZONE_MIN && yValue < JOYSTICK_DEADZONE_MAX);
+
+      if (joystickInNeutral) {
+        Serial.println("S");
+      } else {
+        if (yValue > JOYSTICK_DEADZONE_MAX) {
+          Serial.println("F");
+        } else if (yValue < JOYSTICK_DEADZONE_MIN) {
+          Serial.println("B");
+        } else if (xValue < JOYSTICK_DEADZONE_MIN) {
+          Serial.println("L");
+        } else if (xValue > JOYSTICK_DEADZONE_MAX) {
+          Serial.println("R");
+        }
+      }
+    }
+  }
+}
