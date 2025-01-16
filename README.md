@@ -432,7 +432,106 @@ void loop() {
 
 ---
 
-This project combines motor control, sound effects, and lighting to create a realistic motor vehicle simulation.
+
+
+  ## **Controler Car**
+
+[Code](controler_code)
+
+## Features
+1. **LCD Display**: Shows messages and feedback.
+2. **Joystick Input**: Used for motor direction control (forward, backward, left, right).
+3. **Buttons**: 
+   - Stop button.
+   - Clutch button for gear shifts.
+   - Gear buttons for selecting gears 1, 2, or 3.
+4. **Debouncing**: Ensures reliable button presses.
+5. **Serial Communication**: Logs commands for debugging and testing.
+
+---
+
+## Pin Assignments
+- **LCD Pins**: 8, 9, 10, 11, 12, 13.
+- **Joystick**: 
+  - X-axis: A0.
+  - Y-axis: A1.
+  - Button (switch): Pin 5.
+- **Buttons**: 
+  - Stop: Pin 2.
+  - Clutch: Pin 3.
+  - Gear 1: Pin 4.
+  - Gear 2: Pin 6.
+  - Gear 3: Pin 7.
+
+---
+
+## Functions Overview
+
+### `setup()`
+Initializes all components:
+- Configures button pins as `INPUT_PULLUP`.
+- Sets up the LCD display.
+- Begins serial communication.
+
+### `debounceButton(buttonPin, index)`
+- Debounces button presses to prevent misreads.
+- Returns `true` if the button press is valid based on a delay.
+
+### `debounceButtonState(buttonPin, index, lastButtonState)`
+- Tracks and debounces button state changes.
+- Returns `true` when the button state changes to pressed.
+
+### `displayMessageOnLCD(message)`
+- Displays a message across two lines on the LCD.
+- Clears the screen before writing.
+
+### `loop()`
+Main control logic:
+1. **Serial Input**:
+   - Reads messages and displays them on the LCD.
+2. **Stop Button**:
+   - Activates a "stop mode" and sends an "X" signal via Serial.
+3. **Clutch and Gear Logic**:
+   - Gear changes are allowed only if the clutch is pressed.
+   - Gear states (`Neutral`, `1`, `2`, `3`) are managed and transmitted via Serial.
+4. **Joystick Input**:
+   - Reads X and Y-axis positions and identifies:
+     - Neutral state.
+     - Forward (F), Backward (B), Left (L), and Right (R) movements.
+   - Sends the direction via Serial.
+
+---
+
+## Key Constants and Variables
+
+- **Gear States**: 
+  - `GEAR_NEUTRAL`: 0, `GEAR_FIRST`: 1, `GEAR_SECOND`: 2, `GEAR_THIRD`: 3.
+- **Joystick Deadzone**:
+  - Prevents accidental movements.
+  - Defined by `JOYSTICK_DEADZONE_MIN` and `JOYSTICK_DEADZONE_MAX`.
+- **Debounce Delay**:
+  - Button presses are validated after a delay (`DEBOUNCE_DELAY`).
+
+---
+
+## Workflow
+
+1. **System Initialization**:
+   - LCD and buttons are set up.
+2. **Gear and Joystick Control**:
+   - Joystick inputs control directions if a gear is engaged.
+   - Gear shifts require clutch activation.
+3. **Stop Mode**:
+   - Overrides all inputs until the stop button is released.
+
+---
+
+## Serial Commands
+- **X**: Stop mode.
+- **G1, G2, G3**: Gear selection (1st, 2nd, 3rd).
+- **H**: Horn activation.
+- **F, B, L, R**: Directions (Forward, Backward, Left, Right).
+- **S**: Stop motor.
 
 
 
