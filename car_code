@@ -1,0 +1,339 @@
+
+
+#include <Arduino.h>
+
+const int buzzerPin = A4;
+const int motorPin1 = 3, motorPin2 = 4, enablePinA = 5;
+const int motorPin3 = 6, motorPin4 = 7, enablePinB = 8;
+const int motorPin5 = 9, motorPin6 = 10, enablePinC = 11;
+const int motorPin7 = 12, motorPin8 = 13, enablePinD = 2;
+const int ledFaceL = A0;
+const int ledFaceR = A1;
+const int ledBackL = A2;
+const int ledBackR = A3;
+
+const int gearSpeeds[4] = {0, 85, 170, 255};
+const int hornDuration = 500; 
+const int animationInterval = 50; 
+const int ledBlinkInterval = 300; 
+const int toneStartFreq = 1500; 
+const int toneEndFreq = 800; 
+const int toneStep = 100; 
+const int ledStep = 15; 
+const int ledHigh = 255;
+const int ledLow = 0;
+const int gearZero = 0;
+const int gearOne =1;
+const int gearTwo = 2;
+const int gearThree =3;
+const int hornTone = 1000;
+const int motorLow=0;
+
+
+int motorSpeed = 0;
+int currentGear = 0;
+unsigned long hornStartTime = 0;
+bool hornActive = false;
+unsigned long animationStartTime = 0;
+bool animationActive = false;
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledFaceL, OUTPUT);
+  pinMode(ledFaceR, OUTPUT);
+  pinMode(ledBackL, OUTPUT);
+  pinMode(ledBackR, OUTPUT);
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(enablePinA, OUTPUT);
+
+  pinMode(motorPin3, OUTPUT);
+  pinMode(motorPin4, OUTPUT);
+  pinMode(enablePinB, OUTPUT);
+
+  pinMode(motorPin5, OUTPUT);
+  pinMode(motorPin6, OUTPUT);
+  pinMode(enablePinC, OUTPUT);
+
+  pinMode(motorPin7, OUTPUT);
+  pinMode(motorPin8, OUTPUT);
+  pinMode(enablePinD, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void stopMotors() {
+  analogWrite(ledFaceL, ledLow);
+  analogWrite(ledFaceR, ledLow);
+  analogWrite(ledBackL, ledLow);
+  analogWrite(ledBackR, ledLow);
+  digitalWrite(motorPin1, LOW); digitalWrite(motorPin2, LOW); analogWrite(enablePinA, motorLow);
+  digitalWrite(motorPin3, LOW); digitalWrite(motorPin4, LOW); analogWrite(enablePinB, motorLow);
+  digitalWrite(motorPin5, LOW); digitalWrite(motorPin6, LOW); analogWrite(enablePinC, motorLow);
+  digitalWrite(motorPin7, LOW); digitalWrite(motorPin8, LOW); analogWrite(enablePinD, motorLow);
+}
+
+void playEngineStopSound() {
+  static int freq = toneStartFreq;
+  static bool soundPlaying = true;
+  static unsigned long lastSoundTime = 0;
+
+  if (soundPlaying) {
+    if (millis() - lastSoundTime >= animationInterval) {
+      tone(buzzerPin, freq, animationInterval);
+      lastSoundTime = millis();
+      freq -= toneStep;
+
+      if (freq < toneEndFreq) {
+        soundPlaying = false;
+      }
+    }
+  } else {
+    noTone(buzzerPin);
+  }
+}
+
+void playHornSound() {
+  if (!hornActive) {
+    hornActive = true;
+    hornStartTime = millis();
+    tone(buzzerPin, hornTone);
+  }
+
+  if (hornActive && millis() - hornStartTime >= hornDuration) {
+    noTone(buzzerPin);
+    hornActive = false;
+  }
+}
+
+void ledAnimationOnStop() {
+  static int brightness = 0;
+  static int stage = 0;
+  static int iteration = 0;
+
+  if (!animationActive) {
+    animationActive = true;
+    animationStartTime = millis();
+    stage = 0;
+    iteration = 0;
+    brightness = 0;
+  }
+
+  if (animationActive && millis() - animationStartTime >= animationInterval) {
+    animationStartTime = millis();
+    if (stage == 0) {
+      brightness += ledStep;
+      if (brightness >= ledHigh) {
+        stage = 1;
+      }
+    } else if (stage == 1) {
+      brightness -= ledStep;
+      if (brightness <= ledLow) {
+        stage = 2;
+      }
+      analogWrite(ledBackL, ledHigh - brightness);
+      analogWrite(ledBackR, ledHigh - brightness);
+    } else if (stage == 2) {
+      if (iteration < 3) {
+        analogWrite(ledFaceL, ledHigh);
+        analogWrite(ledFaceR, ledHigh);
+        analogWrite(ledBackL, ledHigh);
+        analogWrite(ledBackR, ledHigh);
+        delay(animationInterval);
+
+        analogWrite(ledFaceL, ledLow);
+        analogWrite(ledFaceR, ledLow);
+        analogWrite(ledBackL, ledLow);
+        analogWrite(ledBackR, ledLow);
+        delay(animationInterval);
+        iteration++;
+      } else {
+        animationActive = false;
+      }
+    }
+
+    analogWrite(ledFaceL, brightness);
+    analogWrite(ledFaceR, brightness);
+  }
+}
+
+void changeGear(int newGear) {
+  if (newGear == gearOne && currentGear == gearZero) {
+    currentGear = gearOne;
+    motorSpeed = gearSpeeds[gearOne];
+  }
+  else if (newGear == gearTwo && currentGear == gearOne) {
+    currentGear = gearTwo;
+    motorSpeed = gearSpeeds[gearTwo];
+  }
+  else if (newGear == gearThree && currentGear == gearTwo) {
+    currentGear = gearThree;
+    motorSpeed = gearSpeeds[gearThree];
+  }
+  else if (newGear == gearTwo && currentGear == gearThree) {
+    currentGear = gearTwo;
+    motorSpeed = gearSpeeds[gearTwo];
+  }
+  else if (newGear == gearOne && currentGear == gearTwo) {
+    currentGear = gearOne;
+    motorSpeed = gearSpeeds[gearOne];
+  }
+  else if (newGear == gearOne && currentGear == gearThree) {
+    stopMotors();
+    ledAnimationOnStop();
+    playEngineStopSound();
+    currentGear = gearZero;
+    motorSpeed = gearSpeeds[gearZero];
+    Serial.println("Your engine has died.");
+
+    return;
+  }
+  else if (newGear == gearZero) {
+    stopMotors();
+    currentGear = gearZero;
+    motorSpeed = gearSpeeds[gearZero];
+  }
+  else {
+    Serial.println("Invalid gear. No change.");
+    return;
+  }
+
+  Serial.print("Gear changed to: ");
+  Serial.println(currentGear);
+  Serial.print("Motor speed set to: ");
+  Serial.println(motorSpeed);
+}
+
+void moveForward() {
+  if (currentGear > gearZero) {
+    Serial.print("Moving forward with speed: ");
+    Serial.println(motorSpeed);
+
+    analogWrite(ledFaceL, ledLow);
+    analogWrite(ledFaceR, ledLow);
+    analogWrite(ledBackL, ledLow);
+    analogWrite(ledBackR, ledLow);
+
+    digitalWrite(motorPin1, LOW); digitalWrite(motorPin2, HIGH); analogWrite(enablePinA, motorSpeed);
+    digitalWrite(motorPin3, LOW); digitalWrite(motorPin4, HIGH); analogWrite(enablePinB, motorSpeed);
+    digitalWrite(motorPin5, LOW); digitalWrite(motorPin6, HIGH); analogWrite(enablePinC, motorSpeed);
+    digitalWrite(motorPin7, LOW); digitalWrite(motorPin8, HIGH); analogWrite(enablePinD, motorSpeed);
+
+    analogWrite(ledFaceL, ledHigh);
+    analogWrite(ledFaceR, ledHigh);
+  } else {
+    Serial.println("Cannot move forward.Switch gear.");
+  }
+}
+
+void moveBackward() {
+  if (currentGear > gearZero) {
+    Serial.print("Moving backward with speed: ");
+    Serial.println(motorSpeed);
+
+    analogWrite(ledFaceL, ledLow);
+    analogWrite(ledFaceR, ledLow);
+    analogWrite(ledBackL, ledLow);
+    analogWrite(ledBackR, ledLow);
+
+    digitalWrite(motorPin1, HIGH); digitalWrite(motorPin2, LOW); analogWrite(enablePinA, motorSpeed);
+    digitalWrite(motorPin3, HIGH); digitalWrite(motorPin4, LOW); analogWrite(enablePinB, motorSpeed);
+    digitalWrite(motorPin5, HIGH); digitalWrite(motorPin6, LOW); analogWrite(enablePinC, motorSpeed);
+    digitalWrite(motorPin7, HIGH); digitalWrite(motorPin8, LOW); analogWrite(enablePinD, motorSpeed);
+
+    unsigned long currentMillis = millis();
+    static unsigned long previousMillis = 0;
+    static bool ledState = false;
+
+    if (currentMillis - previousMillis >= ledBlinkInterval) {
+      previousMillis = currentMillis;
+      ledState = !ledState;
+
+      if (ledState) {
+        analogWrite(ledBackL, ledHigh);
+        analogWrite(ledBackR, ledHigh);
+      } else {
+        analogWrite(ledBackL, ledLow);
+        analogWrite(ledBackR, ledLow);
+      }
+    }
+  } else {
+    Serial.println("Cannot move backward.Switch gear.");
+  }
+}
+
+void turnRight() {
+  if (currentGear == gearZero) {
+    Serial.println("Cannot turn.Switch gear.");
+    return;
+  }
+  Serial.print("Turning right with speed: ");
+  Serial.println(motorSpeed);
+
+  analogWrite(ledFaceL, ledLow);
+  analogWrite(ledFaceR, ledLow);
+  analogWrite(ledBackL, ledLow);
+  analogWrite(ledBackR, ledLow);
+
+  digitalWrite(motorPin1, LOW); digitalWrite(motorPin2, HIGH); analogWrite(enablePinA, motorSpeed);
+  digitalWrite(motorPin3, HIGH); digitalWrite(motorPin4, LOW); analogWrite(enablePinB, motorSpeed);
+  digitalWrite(motorPin5, LOW); digitalWrite(motorPin6, HIGH); analogWrite(enablePinC, motorSpeed);
+  digitalWrite(motorPin7, HIGH); digitalWrite(motorPin8, LOW); analogWrite(enablePinD, motorSpeed);
+
+  analogWrite(ledFaceR, ledHigh);
+}
+
+void turnLeft() {
+  if (currentGear == gearZero) {
+    Serial.println("Cannot turn.Switch gear.  ");
+    return;
+  }
+  Serial.print("Turning left with speed: ");
+  Serial.println(motorSpeed);
+
+  analogWrite(ledFaceL, ledLow);
+  analogWrite(ledFaceR, ledLow);
+  analogWrite(ledBackL, ledLow);
+  analogWrite(ledBackR, ledLow);
+
+  digitalWrite(motorPin1, HIGH); digitalWrite(motorPin2, LOW); analogWrite(enablePinA, motorSpeed);
+  digitalWrite(motorPin3, LOW); digitalWrite(motorPin4, HIGH); analogWrite(enablePinB, motorSpeed);
+  digitalWrite(motorPin5, HIGH); digitalWrite(motorPin6, LOW); analogWrite(enablePinC, motorSpeed);
+  digitalWrite(motorPin7, LOW); digitalWrite(motorPin8, HIGH); analogWrite(enablePinD, motorSpeed);
+
+  analogWrite(ledFaceL, ledHigh);
+}
+
+void buttonStop() {
+  stopMotors();
+  analogWrite(ledBackL, ledHigh);
+  analogWrite(ledBackR, ledHigh);
+}
+
+void loop() {
+  if (Serial.available()) {
+    char command = Serial.read();
+    if (command == 'F') moveForward();
+    else if (command == 'B') moveBackward();
+    else if (command == 'L') turnLeft();
+    else if (command == 'R') turnRight();
+    else if (command == 'S') stopMotors();
+    else if (command == 'X') buttonStop();
+    else if (command == 'H') playHornSound();
+    else if (command == 'G') {
+      int newGear;
+      newGear = Serial.parseInt();
+      changeGear(newGear);
+    }
+  }
+
+  if (animationActive) {
+    ledAnimationOnStop();
+  }
+
+  if (hornActive) {
+    playHornSound();
+  }
+}
+
+
