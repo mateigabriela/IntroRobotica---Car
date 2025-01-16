@@ -217,5 +217,223 @@ The project consists of a car and a Bluetooth-connected remote control.
   ![Controler Image](photos/telecomanda2.jpg)
   ![Controler Image](photos/telecomanda3.jpg)
 
+  ## **Code Car**
+
+
+  [Code](car_code)
+
+
+## Table of Contents
+1. [Global Variables and Constants](#global-variables-and-constants)
+2. [Setup](#setup)
+3. [Functions](#functions)
+    - [stopMotors()](#stopmotors)
+    - [playEngineStopSound()](#playenginestopsound)
+    - [playHornSound()](#playhornsound)
+    - [ledAnimationOnStop()](#ledanimationonstop)
+    - [changeGear(newGear)](#changegear)
+    - [Movement Functions](#movement-functions)
+4. [Loop](#loop)
+
+---
+
+## Global Variables and Constants
+
+- **Pin Configurations**:
+  - Motor control pins (`motorPin1`, `motorPin2`, etc.).
+  - LED pins (`ledFaceL`, `ledFaceR`, `ledBackL`, `ledBackR`).
+  - Buzzer pin (`buzzerPin`).
+
+- **Gear Settings**:
+  - `gearSpeeds[4]`: Holds speed values for each gear.
+
+- **Timing Intervals**:
+  - `hornDuration`, `animationInterval`, `ledBlinkInterval` for timing effects.
+
+- **Control Variables**:
+  - `currentGear`, `motorSpeed`, `hornActive`, and others to maintain state.
+
+---
+
+## Setup
+
+```cpp
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(ledFaceL, OUTPUT);
+  pinMode(ledFaceR, OUTPUT);
+  pinMode(ledBackL, OUTPUT);
+  pinMode(ledBackR, OUTPUT);
+
+  // Configure motor pins.
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(enablePinA, OUTPUT);
+  ...
+
+  Serial.begin(9600); // Initialize serial communication for commands.
+}
+```
+- Initializes pins for motors, LEDs, and the buzzer.
+- Configures serial communication to send and receive commands.
+
+---
+
+## Functions
+
+### `stopMotors()`
+Stops all motor movements and resets LEDs.
+```cpp
+void stopMotors() {
+  analogWrite(ledFaceL, 0);
+  analogWrite(ledFaceR, 0);
+  ...
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, LOW);
+  ...
+}
+```
+
+### `playEngineStopSound()`
+Plays a decreasing tone to simulate the engine stopping.
+- Uses `tone()` to generate sound on the buzzer pin.
+- Decrements frequency until the desired tone range is reached.
+
+```cpp
+void playEngineStopSound() {
+  static int freq = toneStartFreq;
+  ...
+  if (soundPlaying) {
+    tone(buzzerPin, freq, animationInterval);
+    ...
+    freq -= toneStep;
+  } else {
+    noTone(buzzerPin);
+  }
+}
+```
+
+### `playHornSound()`
+Plays a horn sound for a fixed duration.
+- Activates a tone at 1000 Hz for `hornDuration` milliseconds.
+```cpp
+void playHornSound() {
+  if (!hornActive) {
+    hornActive = true;
+    hornStartTime = millis();
+    tone(buzzerPin, 1000);
+  }
+  ...
+}
+```
+
+### `ledAnimationOnStop()`
+Handles LED brightness animations when the engine stops.
+- Gradually increases and decreases LED brightness using `analogWrite()`.
+```cpp
+void ledAnimationOnStop() {
+  static int brightness = 0;
+  ...
+  brightness += ledStep;
+  analogWrite(ledFaceL, brightness);
+  analogWrite(ledFaceR, brightness);
+  ...
+}
+```
+
+### `changeGear(int newGear)`
+Handles gear changes and adjusts motor speeds accordingly.
+- Gears range from 0 to 3, with speed adjustments based on `gearSpeeds`.
+- Stops motors and activates animations if moving to gear 0.
+```cpp
+void changeGear(int newGear) {
+  if (newGear == 1 && currentGear == 0) {
+    currentGear = 1;
+    motorSpeed = gearSpeeds[1];
+  }
+  ...
+}
+```
+
+### Movement Functions
+
+#### `moveForward()`
+Drives the motors forward at the current gear speed.
+- Lights up front LEDs.
+```cpp
+void moveForward() {
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, HIGH);
+  analogWrite(enablePinA, motorSpeed);
+  ...
+}
+```
+
+#### `moveBackward()`
+Drives the motors backward at the current gear speed.
+- Blinks rear LEDs.
+```cpp
+void moveBackward() {
+  digitalWrite(motorPin1, HIGH);
+  digitalWrite(motorPin2, LOW);
+  ...
+}
+```
+
+#### `turnLeft()` / `turnRight()`
+Activates motors to turn the vehicle.
+- Lights up the corresponding side LED.
+
+```cpp
+void turnRight() {
+  digitalWrite(motorPin1, LOW);
+  digitalWrite(motorPin2, HIGH);
+  analogWrite(enablePinA, motorSpeed);
+  ...
+}
+```
+
+### `buttonStop()`
+Stops the motor system and turns on rear LEDs as a brake signal.
+```cpp
+void buttonStop() {
+  stopMotors();
+  analogWrite(ledBackL, 255);
+  analogWrite(ledBackR, 255);
+}
+```
+
+---
+
+## Loop
+
+The `loop()` function continuously listens for serial commands and triggers the corresponding actions:
+```cpp
+void loop() {
+  if (Serial.available()) {
+    char command = Serial.read();
+    if (command == 'F') moveForward();
+    else if (command == 'B') moveBackward();
+    else if (command == 'L') turnLeft();
+    ...
+  }
+  if (animationActive) ledAnimationOnStop();
+  if (hornActive) playHornSound();
+}
+```
+- **Commands**:
+  - `'F'`: Move forward.
+  - `'B'`: Move backward.
+  - `'L'`: Turn left.
+  - `'R'`: Turn right.
+  - `'S'`: Stop motors.
+  - `'H'`: Activate horn.
+  - `'G'`: Change gear (followed by gear number).
+
+---
+
+This project combines motor control, sound effects, and lighting to create a realistic motor vehicle simulation.
+
+
 
 ---
