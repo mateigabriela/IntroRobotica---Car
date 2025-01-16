@@ -434,29 +434,175 @@ void loop() {
 
 
 
-  ## **Controler Car**
+## **Controler Car**
 
 [Code](controler_code)
 
-## Features
-1. **LCD Display**: Shows messages and feedback.
-2. **Joystick Input**: Used for motor direction control (forward, backward, left, right).
-3. **Buttons**: 
-   - Stop button.
-   - Clutch button for gear shifts.
-   - Gear buttons for selecting gears 1, 2, or 3.
-4. **Debouncing**: Ensures reliable button presses.
-5. **Serial Communication**: Logs commands for debugging and testing.
+## Table of Contents
+1. [Global Variables and Constants](#global-variables-and-constants)
+2. [Setup](#setup)
+3. [Functions](#functions)
+    - [debounceButton(buttonPin, index)](#debouncebutton)
+    - [debounceButtonState(buttonPin, index, lastButtonState)](#debouncebuttonstate)
+    - [displayMessageOnLCD(message)](#displaymessageonlcd)
+4. [Loop](#loop)
+5. [Pin Assignments](#pin-assignments)
+6. [Serial Commands](#serial-commands)
+
+---
+
+## Global Variables and Constants
+
+- **Pin Configurations**:
+  - **LCD Pins**: 8, 9, 10, 11, 12, 13.
+  - **Joystick**:
+    - X-axis: A0.
+    - Y-axis: A1.
+    - Button (switch): Pin 5.
+  - **Buttons**:
+    - Stop: Pin 2.
+    - Clutch: Pin 3.
+    - Gear 1: Pin 4.
+    - Gear 2: Pin 6.
+    - Gear 3: Pin 7.
+
+- **Gear States**:
+  - `GEAR_NEUTRAL`: 0, `GEAR_FIRST`: 1, `GEAR_SECOND`: 2, `GEAR_THIRD`: 3.
+
+- **Joystick Deadzone**:
+  - Prevents accidental movements.
+  - Defined by `JOYSTICK_DEADZONE_MIN` and `JOYSTICK_DEADZONE_MAX`.
+
+- **Debounce Delay**:
+  - Button presses are validated after a delay (`DEBOUNCE_DELAY`).
+
+---
+
+## Setup
+
+Initializes all components:
+
+```cpp
+void setup() {
+  // Configure button pins as INPUT_PULLUP
+  pinMode(2, INPUT_PULLUP); // Stop button
+  pinMode(3, INPUT_PULLUP); // Clutch button
+  pinMode(4, INPUT_PULLUP); // Gear 1
+  pinMode(6, INPUT_PULLUP); // Gear 2
+  pinMode(7, INPUT_PULLUP); // Gear 3
+
+  // Initialize LCD
+  lcd.begin(16, 2);
+
+  // Begin serial communication
+  Serial.begin(9600);
+}
+```
+
+- Configures pins for buttons, joystick, and LCD.
+- Sets up serial communication for logging and debugging.
+
+---
+
+## Functions
+
+### debounceButton(buttonPin, index)
+Debounces button presses to ensure reliable input.
+
+```cpp
+bool debounceButton(int buttonPin, int index) {
+  static unsigned long lastDebounceTime[NUM_BUTTONS] = {0};
+  if ((millis() - lastDebounceTime[index]) > DEBOUNCE_DELAY) {
+    lastDebounceTime[index] = millis();
+    return digitalRead(buttonPin) == LOW;
+  }
+  return false;
+}
+```
+
+---
+
+### debounceButtonState(buttonPin, index, lastButtonState)
+Tracks and debounces button state changes.
+
+```cpp
+bool debounceButtonState(int buttonPin, int index, bool &lastButtonState) {
+  bool currentState = digitalRead(buttonPin) == LOW;
+  if (currentState != lastButtonState) {
+    lastButtonState = currentState;
+    return currentState;
+  }
+  return false;
+}
+```
+
+---
+
+### displayMessageOnLCD(message)
+Displays a message across two lines on the LCD.
+
+```cpp
+void displayMessageOnLCD(String message) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(message.substring(0, 16));
+  lcd.setCursor(0, 1);
+  lcd.print(message.substring(16));
+}
+```
+
+---
+
+## Loop
+
+Handles main control logic, including serial commands, button presses, and joystick input.
+
+```cpp
+void loop() {
+  // Serial Input
+  if (Serial.available()) {
+    char command = Serial.read();
+    if (command == 'X') {
+      // Stop mode
+      displayMessageOnLCD("Stop Mode Activated");
+      Serial.println("X");
+    }
+  }
+
+  // Stop Button
+  if (debounceButton(2, 0)) {
+    displayMessageOnLCD("System Stopped");
+    Serial.println("X");
+  }
+
+  // Clutch and Gear Logic
+  if (debounceButton(3, 1)) {
+    if (debounceButton(4, 2)) Serial.println("G1");
+    else if (debounceButton(6, 3)) Serial.println("G2");
+    else if (debounceButton(7, 4)) Serial.println("G3");
+  }
+
+  // Joystick Input
+  int xValue = analogRead(A0);
+  int yValue = analogRead(A1);
+
+  if (xValue < JOYSTICK_DEADZONE_MIN) Serial.println("L");
+  else if (xValue > JOYSTICK_DEADZONE_MAX) Serial.println("R");
+  else if (yValue < JOYSTICK_DEADZONE_MIN) Serial.println("F");
+  else if (yValue > JOYSTICK_DEADZONE_MAX) Serial.println("B");
+}
+```
 
 ---
 
 ## Pin Assignments
-- **LCD Pins**: 8, 9, 10, 11, 12, 13.
-- **Joystick**: 
+
+- **LCD**: Pins 8, 9, 10, 11, 12, 13.
+- **Joystick**:
   - X-axis: A0.
   - Y-axis: A1.
-  - Button (switch): Pin 5.
-- **Buttons**: 
+  - Button: Pin 5.
+- **Buttons**:
   - Stop: Pin 2.
   - Clutch: Pin 3.
   - Gear 1: Pin 4.
@@ -465,74 +611,13 @@ void loop() {
 
 ---
 
-## Functions Overview
-
-### `setup()`
-Initializes all components:
-- Configures button pins as `INPUT_PULLUP`.
-- Sets up the LCD display.
-- Begins serial communication.
-
-### `debounceButton(buttonPin, index)`
-- Debounces button presses to prevent misreads.
-- Returns `true` if the button press is valid based on a delay.
-
-### `debounceButtonState(buttonPin, index, lastButtonState)`
-- Tracks and debounces button state changes.
-- Returns `true` when the button state changes to pressed.
-
-### `displayMessageOnLCD(message)`
-- Displays a message across two lines on the LCD.
-- Clears the screen before writing.
-
-### `loop()`
-Main control logic:
-1. **Serial Input**:
-   - Reads messages and displays them on the LCD.
-2. **Stop Button**:
-   - Activates a "stop mode" and sends an "X" signal via Serial.
-3. **Clutch and Gear Logic**:
-   - Gear changes are allowed only if the clutch is pressed.
-   - Gear states (`Neutral`, `1`, `2`, `3`) are managed and transmitted via Serial.
-4. **Joystick Input**:
-   - Reads X and Y-axis positions and identifies:
-     - Neutral state.
-     - Forward (F), Backward (B), Left (L), and Right (R) movements.
-   - Sends the direction via Serial.
-
----
-
-## Key Constants and Variables
-
-- **Gear States**: 
-  - `GEAR_NEUTRAL`: 0, `GEAR_FIRST`: 1, `GEAR_SECOND`: 2, `GEAR_THIRD`: 3.
-- **Joystick Deadzone**:
-  - Prevents accidental movements.
-  - Defined by `JOYSTICK_DEADZONE_MIN` and `JOYSTICK_DEADZONE_MAX`.
-- **Debounce Delay**:
-  - Button presses are validated after a delay (`DEBOUNCE_DELAY`).
-
----
-
-## Workflow
-
-1. **System Initialization**:
-   - LCD and buttons are set up.
-2. **Gear and Joystick Control**:
-   - Joystick inputs control directions if a gear is engaged.
-   - Gear shifts require clutch activation.
-3. **Stop Mode**:
-   - Overrides all inputs until the stop button is released.
-
----
-
 ## Serial Commands
+
 - **X**: Stop mode.
 - **G1, G2, G3**: Gear selection (1st, 2nd, 3rd).
 - **H**: Horn activation.
 - **F, B, L, R**: Directions (Forward, Backward, Left, Right).
 - **S**: Stop motor.
-
 
 
 ---
